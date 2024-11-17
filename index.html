@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #001f3f; /* Dark Blue Background */
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            margin-top: 20px;
+            font-size: 36px;
+            color: #ffffff;
+        }
+
+        #gameBoard {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            justify-content: center;
+            margin: 20px auto;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            font-weight: bold;
+            background-color: #0074D9; /* Blue cell background */
+            border: 2px solid #ffffff; /* White border */
+            cursor: pointer;
+            color: #ffffff;
+        }
+
+        .cell.taken {
+            pointer-events: none;
+        }
+
+        #gameInfo {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            background-color: #FF4136; /* Red Button */
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #FF6347; /* Lighter Red */
+        }
+
+        footer {
+            margin-top: 30px;
+            font-size: 16px;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <div id="gameBoard"></div>
+    <div id="gameInfo"></div>
+    <button onclick="resetGame()">Restart Game</button>
+
+    <footer>Made By Anas</footer>
+
+    <script>
+        const gameBoard = document.getElementById("gameBoard");
+        const gameInfo = document.getElementById("gameInfo");
+        let currentPlayer = "X"; // Human player
+        let board = ["", "", "", "", "", "", "", "", ""];
+
+        // Initialize the game board
+        function createBoard() {
+            gameBoard.innerHTML = "";
+            board.forEach((cell, index) => {
+                const cellDiv = document.createElement("div");
+                cellDiv.classList.add("cell");
+                cellDiv.dataset.index = index;
+                cellDiv.addEventListener("click", handleHumanMove);
+                gameBoard.appendChild(cellDiv);
+            });
+            updateGameInfo();
+        }
+
+        // Handle human move
+        function handleHumanMove(event) {
+            const cell = event.target;
+            const index = cell.dataset.index;
+
+            if (board[index] === "") {
+                board[index] = currentPlayer;
+                cell.textContent = currentPlayer;
+                cell.classList.add("taken");
+                if (checkWin()) {
+                    gameInfo.textContent = `Player ${currentPlayer} Wins!`;
+                    disableBoard();
+                } else if (board.every((cell) => cell !== "")) {
+                    gameInfo.textContent = "It's a Draw!";
+                } else {
+                    currentPlayer = "O"; // Switch to computer player
+                    updateGameInfo();
+                    setTimeout(handleComputerMove, 500); // Delay for computer move
+                }
+            }
+        }
+
+        // Handle computer move
+        function handleComputerMove() {
+            const emptyCells = board.map((cell, index) => cell === "" ? index : null).filter(index => index !== null);
+
+            if (emptyCells.length > 0) {
+                const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                board[randomIndex] = currentPlayer;
+
+                const cellDiv = document.querySelector(`.cell[data-index='${randomIndex}']`);
+                cellDiv.textContent = currentPlayer;
+                cellDiv.classList.add("taken");
+
+                if (checkWin()) {
+                    gameInfo.textContent = `Player ${currentPlayer} Wins!`;
+                    disableBoard();
+                } else if (board.every((cell) => cell !== "")) {
+                    gameInfo.textContent = "It's a Draw!";
+                } else {
+                    currentPlayer = "X"; // Switch back to human player
+                    updateGameInfo();
+                }
+            }
+        }
+
+        // Update game info
+        function updateGameInfo() {
+            gameInfo.textContent = `Current Player: ${currentPlayer}`;
+        }
+
+        // Check for a win
+        function checkWin() {
+            const winPatterns = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ];
+
+            return winPatterns.some((pattern) => {
+                const [a, b, c] = pattern;
+                return (
+                    board[a] &&
+                    board[a] === board[b] &&
+                    board[a] === board[c]
+                );
+            });
+        }
+
+        // Disable the board after a win or draw
+        function disableBoard() {
+            document.querySelectorAll(".cell").forEach((cell) => {
+                cell.classList.add("taken");
+            });
+        }
+
+        // Reset the game
+        function resetGame() {
+            board = ["", "", "", "", "", "", "", "", ""];
+            currentPlayer = "X"; // Human player starts
+            createBoard();
+            updateGameInfo();
+        }
+
+        // Initialize the game on page load
+        createBoard();
+    </script>
+</body>
+</html>
