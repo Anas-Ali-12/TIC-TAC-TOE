@@ -8,16 +8,30 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #001f3f; /* Dark Blue Background */
-            color: white;
             margin: 0;
             padding: 0;
+            background: linear-gradient(135deg, #800080, #FF0000); /* Purple and Red Gradient */
+            color: white;
+            overflow: hidden;
         }
 
         h1 {
             margin-top: 20px;
-            font-size: 36px;
-            color: #ffffff;
+            font-size: 50px;
+            font-weight: bold;
+            color: #FFF;
+            text-shadow: 0 0 20px #FFD700, 0 0 40px #FFD700, 0 0 60px #FFD700;
+        }
+
+        #gameModes {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
         }
 
         #gameBoard {
@@ -26,7 +40,8 @@
             grid-template-rows: repeat(3, 100px);
             gap: 5px;
             justify-content: center;
-            margin: 20px auto;
+            margin: 50px auto;
+            position: relative;
         }
 
         .cell {
@@ -37,125 +52,154 @@
             align-items: center;
             font-size: 36px;
             font-weight: bold;
-            background-color: #0074D9; /* Blue cell background */
-            border: 2px solid #ffffff; /* White border */
+            background-color: rgba(255, 255, 255, 0.3); /* Slight transparency */
+            border: 2px solid white;
             cursor: pointer;
-            color: #ffffff;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .cell.taken {
-            pointer-events: none;
+        .cell span.X {
+            color: #fff;
+            text-shadow: 0 0 20px #00ffcc, 0 0 40px #00ffcc, 0 0 60px #00ffcc;
         }
 
-        #gameInfo {
-            margin-top: 20px;
-            font-size: 20px;
-            font-weight: bold;
-            color: #ffffff;
+        .cell span.O {
+            color: #fff;
+            text-shadow: 0 0 20px #ff6347, 0 0 40px #ff6347, 0 0 60px #ff6347;
         }
 
         button {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 18px;
             cursor: pointer;
-            background-color: #FF4136; /* Red Button */
+            background-color: rgba(255, 69, 0, 0.8);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: bold;
         }
 
         button:hover {
-            background-color: #FF6347; /* Lighter Red */
+            background-color: #FF4500;
+            transform: scale(1.1);
+        }
+
+        #winMessage {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #FFF, 0 0 40px #FFF;
+            display: none;
+        }
+
+        .control-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
         }
 
         footer {
-            margin-top: 30px;
-            font-size: 16px;
-            color: #ffffff;
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            font-size: 18px;
+            color: #FFD700;
+            text-shadow: 0 0 10px #FFD700;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <h1>Tic Tac Toe</h1>
-    <div id="gameBoard"></div>
-    <div id="gameInfo"></div>
-    <button onclick="resetGame()">Restart Game</button>
-
-    <footer>Made By Anas</footer>
+    <div id="gameModes">
+        <button onclick="startGame('PvP')">Player vs Player</button>
+        <button onclick="startGame('PvC')">Player vs Computer</button>
+    </div>
+    <div id="gameBoard" style="display:none;"></div>
+    <div id="winMessage"></div>
+    <div class="control-buttons" style="display:none;" id="gameControls">
+        <button onclick="resetGame()">Restart Game</button>
+        <button onclick="goBack()">Back to Main Menu</button>
+    </div>
+    <footer>MADE BY ANAS</footer>
 
     <script>
         const gameBoard = document.getElementById("gameBoard");
-        const gameInfo = document.getElementById("gameInfo");
-        let currentPlayer = "X"; // Human player
-        let board = ["", "", "", "", "", "", "", "", ""];
+        const winMessage = document.getElementById("winMessage");
+        const gameModes = document.getElementById("gameModes");
+        const gameControls = document.getElementById("gameControls");
 
-        // Initialize the game board
+        let currentPlayer = "X";
+        let board = ["", "", "", "", "", "", "", "", ""];
+        let gameMode = null;
+
+        function startGame(mode) {
+            gameMode = mode;
+            gameModes.style.display = "none";
+            gameBoard.style.display = "grid";
+            gameControls.style.display = "flex";
+            resetGame();
+        }
+
         function createBoard() {
             gameBoard.innerHTML = "";
-            board.forEach((cell, index) => {
+            board.forEach((_, index) => {
                 const cellDiv = document.createElement("div");
                 cellDiv.classList.add("cell");
                 cellDiv.dataset.index = index;
-                cellDiv.addEventListener("click", handleHumanMove);
+                cellDiv.addEventListener("click", () => handleMove(index));
                 gameBoard.appendChild(cellDiv);
             });
-            updateGameInfo();
         }
 
-        // Handle human move
-        function handleHumanMove(event) {
-            const cell = event.target;
-            const index = cell.dataset.index;
+        function handleMove(index) {
+            if (board[index] !== "") return;
 
-            if (board[index] === "") {
-                board[index] = currentPlayer;
-                cell.textContent = currentPlayer;
-                cell.classList.add("taken");
-                if (checkWin()) {
-                    gameInfo.textContent = `Player ${currentPlayer} Wins!`;
-                    disableBoard();
-                } else if (board.every((cell) => cell !== "")) {
-                    gameInfo.textContent = "It's a Draw!";
-                } else {
-                    currentPlayer = "O"; // Switch to computer player
-                    updateGameInfo();
-                    setTimeout(handleComputerMove, 500); // Delay for computer move
+            board[index] = currentPlayer;
+            renderBoard();
+
+            if (checkWin(currentPlayer)) {
+                showWinMessage(`${currentPlayer} Wins the Game!`);
+                disableBoard();
+            } else if (board.every((cell) => cell !== "")) {
+                showWinMessage("It's a Draw!");
+            } else {
+                currentPlayer = currentPlayer === "X" ? "O" : "X";
+                if (gameMode === "PvC" && currentPlayer === "O") {
+                    setTimeout(handleComputerMove, 500);
                 }
             }
         }
 
-        // Handle computer move
         function handleComputerMove() {
-            const emptyCells = board.map((cell, index) => cell === "" ? index : null).filter(index => index !== null);
+            const emptyCells = board
+                .map((cell, index) => (cell === "" ? index : null))
+                .filter((index) => index !== null);
 
-            if (emptyCells.length > 0) {
-                const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                board[randomIndex] = currentPlayer;
+            const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            board[randomIndex] = "O";
+            renderBoard();
 
-                const cellDiv = document.querySelector(`.cell[data-index='${randomIndex}']`);
-                cellDiv.textContent = currentPlayer;
-                cellDiv.classList.add("taken");
-
-                if (checkWin()) {
-                    gameInfo.textContent = `Player ${currentPlayer} Wins!`;
-                    disableBoard();
-                } else if (board.every((cell) => cell !== "")) {
-                    gameInfo.textContent = "It's a Draw!";
-                } else {
-                    currentPlayer = "X"; // Switch back to human player
-                    updateGameInfo();
-                }
+            if (checkWin("O")) {
+                showWinMessage("O Wins the Game!");
+                disableBoard();
+            } else if (board.every((cell) => cell !== "")) {
+                showWinMessage("It's a Draw!");
+            } else {
+                currentPlayer = "X";
             }
         }
 
-        // Update game info
-        function updateGameInfo() {
-            gameInfo.textContent = `Current Player: ${currentPlayer}`;
-        }
-
-        // Check for a win
-        function checkWin() {
+        function checkWin(player) {
             const winPatterns = [
                 [0, 1, 2],
                 [3, 4, 5],
@@ -167,32 +211,41 @@
                 [2, 4, 6],
             ];
 
-            return winPatterns.some((pattern) => {
-                const [a, b, c] = pattern;
-                return (
-                    board[a] &&
-                    board[a] === board[b] &&
-                    board[a] === board[c]
-                );
-            });
+            return winPatterns.some((pattern) =>
+                pattern.every((index) => board[index] === player)
+            );
         }
 
-        // Disable the board after a win or draw
+        function showWinMessage(message) {
+            winMessage.textContent = message;
+            winMessage.style.display = "block";
+        }
+
         function disableBoard() {
-            document.querySelectorAll(".cell").forEach((cell) => {
-                cell.classList.add("taken");
-            });
+            gameBoard.style.pointerEvents = "none";
         }
 
-        // Reset the game
         function resetGame() {
             board = ["", "", "", "", "", "", "", "", ""];
-            currentPlayer = "X"; // Human player starts
+            currentPlayer = "X";
+            winMessage.style.display = "none";
+            gameBoard.style.pointerEvents = "auto";
             createBoard();
-            updateGameInfo();
         }
 
-        // Initialize the game on page load
+        function goBack() {
+            resetGame();
+            gameModes.style.display = "flex";
+            gameBoard.style.display = "none";
+            gameControls.style.display = "none";
+        }
+
+        function renderBoard() {
+            gameBoard.querySelectorAll(".cell").forEach((cell, index) => {
+                cell.innerHTML = board[index] ? `<span class="${board[index]}">${board[index]}</span>` : "";
+            });
+        }
+
         createBoard();
     </script>
 </body>
