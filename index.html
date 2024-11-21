@@ -132,121 +132,167 @@
     </div>
     <footer>MADE BY ANAS</footer>
 
-    <script>
-        const gameBoard = document.getElementById("gameBoard");
-        const winMessage = document.getElementById("winMessage");
-        const gameModes = document.getElementById("gameModes");
-        const gameControls = document.getElementById("gameControls");
+<script>
+    const gameBoard = document.getElementById("gameBoard");
+    const winMessage = document.getElementById("winMessage");
+    const gameModes = document.getElementById("gameModes");
+    const gameControls = document.getElementById("gameControls");
 
-        let currentPlayer = "X";
-        let board = ["", "", "", "", "", "", "", "", ""];
-        let gameMode = null;
+    let currentPlayer = "X";
+    let board = ["", "", "", "", "", "", "", "", ""];
+    let gameMode = null;
 
-        function startGame(mode) {
-            gameMode = mode;
-            gameModes.style.display = "none";
-            gameBoard.style.display = "grid";
-            gameControls.style.display = "flex";
-            resetGame();
+    function startGame(mode) {
+        gameMode = mode;
+        gameModes.style.display = "none";
+        gameBoard.style.display = "grid";
+        gameControls.style.display = "flex";
+        resetGame();
+    }
+
+    function createBoard() {
+        gameBoard.innerHTML = "";
+        board.forEach((_, index) => {
+            const cellDiv = document.createElement("div");
+            cellDiv.classList.add("cell");
+            cellDiv.dataset.index = index;
+            cellDiv.addEventListener("click", () => handleMove(index));
+            gameBoard.appendChild(cellDiv);
+        });
+    }
+
+    function handleMove(index) {
+        if (board[index] !== "") return;
+
+        board[index] = currentPlayer;
+        renderBoard();
+
+        if (checkWin(currentPlayer)) {
+            showWinMessage(`${currentPlayer} Wins the Game!`);
+            disableBoard();
+        } else if (board.every((cell) => cell !== "")) {
+            showWinMessage("It's a Draw!");
+        } else {
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            if (gameMode === "PvC" && currentPlayer === "O") {
+                setTimeout(handleComputerMove, 500);
+            }
         }
+    }
 
-        function createBoard() {
-            gameBoard.innerHTML = "";
-            board.forEach((_, index) => {
-                const cellDiv = document.createElement("div");
-                cellDiv.classList.add("cell");
-                cellDiv.dataset.index = index;
-                cellDiv.addEventListener("click", () => handleMove(index));
-                gameBoard.appendChild(cellDiv);
-            });
+    function handleComputerMove() {
+        const bestMove = minimax(board, "O").index;
+        board[bestMove] = "O";
+        renderBoard();
+
+        if (checkWin("O")) {
+            showWinMessage("O Wins the Game!");
+            disableBoard();
+        } else if (board.every((cell) => cell !== "")) {
+            showWinMessage("It's a Draw!");
+        } else {
+            currentPlayer = "X";
         }
+    }
 
-        function handleMove(index) {
-            if (board[index] !== "") return;
+    function checkWin(player) {
+        const winPatterns = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+        ];
 
-            board[index] = currentPlayer;
-            renderBoard();
+        return winPatterns.some((pattern) =>
+            pattern.every((index) => board[index] === player)
+        );
+    }
 
-            if (checkWin(currentPlayer)) {
-                showWinMessage(`${currentPlayer} Wins the Game!`);
-                disableBoard();
-            } else if (board.every((cell) => cell !== "")) {
-                showWinMessage("It's a Draw!");
+    function showWinMessage(message) {
+        winMessage.textContent = message;
+        winMessage.style.display = "block";
+    }
+
+    function disableBoard() {
+        gameBoard.style.pointerEvents = "none";
+    }
+
+    function resetGame() {
+        board = ["", "", "", "", "", "", "", "", ""];
+        currentPlayer = "X";
+        winMessage.style.display = "none";
+        gameBoard.style.pointerEvents = "auto";
+        createBoard();
+    }
+
+    function goBack() {
+        resetGame();
+        gameModes.style.display = "flex";
+        gameBoard.style.display = "none";
+        gameControls.style.display = "none";
+    }
+
+    function renderBoard() {
+        gameBoard.querySelectorAll(".cell").forEach((cell, index) => {
+            cell.innerHTML = board[index] ? `<span class="${board[index]}">${board[index]}</span>` : "";
+        });
+    }
+
+    function minimax(newBoard, player) {
+        const emptyCells = newBoard
+            .map((cell, index) => (cell === "" ? index : null))
+            .filter((index) => index !== null);
+
+        if (checkWin("X")) return { score: -10 };
+        if (checkWin("O")) return { score: 10 };
+        if (emptyCells.length === 0) return { score: 0 };
+
+        const moves = [];
+
+        for (const index of emptyCells) {
+            const move = {};
+            move.index = index;
+            newBoard[index] = player;
+
+            if (player === "O") {
+                const result = minimax(newBoard, "X");
+                move.score = result.score;
             } else {
-                currentPlayer = currentPlayer === "X" ? "O" : "X";
-                if (gameMode === "PvC" && currentPlayer === "O") {
-                    setTimeout(handleComputerMove, 500);
+                const result = minimax(newBoard, "O");
+                move.score = result.score;
+            }
+
+            newBoard[index] = "";
+            moves.push(move);
+        }
+
+        let bestMove;
+        if (player === "O") {
+            let bestScore = -Infinity;
+            for (const move of moves) {
+                if (move.score > bestScore) {
+                    bestScore = move.score;
+                    bestMove = move;
+                }
+            }
+        } else {
+            let bestScore = Infinity;
+            for (const move of moves) {
+                if (move.score < bestScore) {
+                    bestScore = move.score;
+                    bestMove = move;
                 }
             }
         }
 
-        function handleComputerMove() {
-            const emptyCells = board
-                .map((cell, index) => (cell === "" ? index : null))
-                .filter((index) => index !== null);
+        return bestMove;
+    }
 
-            const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-            board[randomIndex] = "O";
-            renderBoard();
-
-            if (checkWin("O")) {
-                showWinMessage("O Wins the Game!");
-                disableBoard();
-            } else if (board.every((cell) => cell !== "")) {
-                showWinMessage("It's a Draw!");
-            } else {
-                currentPlayer = "X";
-            }
-        }
-
-        function checkWin(player) {
-            const winPatterns = [
-                [0, 1, 2],
-                [3, 4, 5],
-                [6, 7, 8],
-                [0, 3, 6],
-                [1, 4, 7],
-                [2, 5, 8],
-                [0, 4, 8],
-                [2, 4, 6],
-            ];
-
-            return winPatterns.some((pattern) =>
-                pattern.every((index) => board[index] === player)
-            );
-        }
-
-        function showWinMessage(message) {
-            winMessage.textContent = message;
-            winMessage.style.display = "block";
-        }
-
-        function disableBoard() {
-            gameBoard.style.pointerEvents = "none";
-        }
-
-        function resetGame() {
-            board = ["", "", "", "", "", "", "", "", ""];
-            currentPlayer = "X";
-            winMessage.style.display = "none";
-            gameBoard.style.pointerEvents = "auto";
-            createBoard();
-        }
-
-        function goBack() {
-            resetGame();
-            gameModes.style.display = "flex";
-            gameBoard.style.display = "none";
-            gameControls.style.display = "none";
-        }
-
-        function renderBoard() {
-            gameBoard.querySelectorAll(".cell").forEach((cell, index) => {
-                cell.innerHTML = board[index] ? `<span class="${board[index]}">${board[index]}</span>` : "";
-            });
-        }
-
-        createBoard();
-    </script>
+    createBoard();
+      </script>
 </body>
 </html>
