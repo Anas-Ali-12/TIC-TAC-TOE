@@ -10,7 +10,7 @@
             text-align: center;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #800080, #FF0000); /* Purple and Red Gradient */
+            background: linear-gradient(135deg, #800080, #FF0000);
             color: white;
             overflow: hidden;
         }
@@ -52,7 +52,7 @@
             align-items: center;
             font-size: 36px;
             font-weight: bold;
-            background-color: rgba(255, 255, 255, 0.3); /* Slight transparency */
+            background-color: rgba(255, 255, 255, 0.3);
             border: 2px solid white;
             cursor: pointer;
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
@@ -132,167 +132,174 @@
     </div>
     <footer>MADE BY ANAS</footer>
 
-<script>
-    const gameBoard = document.getElementById("gameBoard");
-    const winMessage = document.getElementById("winMessage");
-    const gameModes = document.getElementById("gameModes");
-    const gameControls = document.getElementById("gameControls");
+    <script>
+        const gameBoard = document.getElementById("gameBoard");
+        const winMessage = document.getElementById("winMessage");
+        const gameModes = document.getElementById("gameModes");
+        const gameControls = document.getElementById("gameControls");
 
-    let currentPlayer = "X";
-    let board = ["", "", "", "", "", "", "", "", ""];
-    let gameMode = null;
+        let currentPlayer = "X";
+        let board = ["", "", "", "", "", "", "", "", ""];
+        let gameMode = null;
 
-    function startGame(mode) {
-        gameMode = mode;
-        gameModes.style.display = "none";
-        gameBoard.style.display = "grid";
-        gameControls.style.display = "flex";
-        resetGame();
-    }
-
-    function createBoard() {
-        gameBoard.innerHTML = "";
-        board.forEach((_, index) => {
-            const cellDiv = document.createElement("div");
-            cellDiv.classList.add("cell");
-            cellDiv.dataset.index = index;
-            cellDiv.addEventListener("click", () => handleMove(index));
-            gameBoard.appendChild(cellDiv);
-        });
-    }
-
-    function handleMove(index) {
-        if (board[index] !== "") return;
-
-        board[index] = currentPlayer;
-        renderBoard();
-
-        if (checkWin(currentPlayer)) {
-            showWinMessage(`${currentPlayer} Wins the Game!`);
-            disableBoard();
-        } else if (board.every((cell) => cell !== "")) {
-            showWinMessage("It's a Draw!");
-        } else {
-            currentPlayer = currentPlayer === "X" ? "O" : "X";
-            if (gameMode === "PvC" && currentPlayer === "O") {
-                setTimeout(handleComputerMove, 500);
-            }
+        function startGame(mode) {
+            gameMode = mode;
+            gameModes.style.display = "none";
+            gameBoard.style.display = "grid";
+            gameControls.style.display = "flex";
+            resetGame();
         }
-    }
 
-    function handleComputerMove() {
-        const bestMove = minimax(board, "O").index;
-        board[bestMove] = "O";
-        renderBoard();
-
-        if (checkWin("O")) {
-            showWinMessage("O Wins the Game!");
-            disableBoard();
-        } else if (board.every((cell) => cell !== "")) {
-            showWinMessage("It's a Draw!");
-        } else {
-            currentPlayer = "X";
+        function createBoard() {
+            gameBoard.innerHTML = "";
+            board.forEach((_, index) => {
+                const cellDiv = document.createElement("div");
+                cellDiv.classList.add("cell");
+                cellDiv.dataset.index = index;
+                cellDiv.addEventListener("click", () => handleMove(index));
+                gameBoard.appendChild(cellDiv);
+            });
         }
-    }
 
-    function checkWin(player) {
-        const winPatterns = [
-            [0, 1, 2],
-            [3, 4, 5],
-            [6, 7, 8],
-            [0, 3, 6],
-            [1, 4, 7],
-            [2, 5, 8],
-            [0, 4, 8],
-            [2, 4, 6],
-        ];
+        function handleMove(index) {
+            if (board[index] !== "") return;
 
-        return winPatterns.some((pattern) =>
-            pattern.every((index) => board[index] === player)
-        );
-    }
+            board[index] = currentPlayer;
+            renderBoard();
 
-    function showWinMessage(message) {
-        winMessage.textContent = message;
-        winMessage.style.display = "block";
-    }
-
-    function disableBoard() {
-        gameBoard.style.pointerEvents = "none";
-    }
-
-    function resetGame() {
-        board = ["", "", "", "", "", "", "", "", ""];
-        currentPlayer = "X";
-        winMessage.style.display = "none";
-        gameBoard.style.pointerEvents = "auto";
-        createBoard();
-    }
-
-    function goBack() {
-        resetGame();
-        gameModes.style.display = "flex";
-        gameBoard.style.display = "none";
-        gameControls.style.display = "none";
-    }
-
-    function renderBoard() {
-        gameBoard.querySelectorAll(".cell").forEach((cell, index) => {
-            cell.innerHTML = board[index] ? `<span class="${board[index]}">${board[index]}</span>` : "";
-        });
-    }
-
-    function minimax(newBoard, player) {
-        const emptyCells = newBoard
-            .map((cell, index) => (cell === "" ? index : null))
-            .filter((index) => index !== null);
-
-        if (checkWin("X")) return { score: -10 };
-        if (checkWin("O")) return { score: 10 };
-        if (emptyCells.length === 0) return { score: 0 };
-
-        const moves = [];
-
-        for (const index of emptyCells) {
-            const move = {};
-            move.index = index;
-            newBoard[index] = player;
-
-            if (player === "O") {
-                const result = minimax(newBoard, "X");
-                move.score = result.score;
+            if (checkWin(currentPlayer)) {
+                showWinMessage(`${currentPlayer} Wins the Game!`);
+                disableBoard();
+            } else if (board.every((cell) => cell !== "")) {
+                showWinMessage("It's a Draw!");
             } else {
-                const result = minimax(newBoard, "O");
-                move.score = result.score;
-            }
-
-            newBoard[index] = "";
-            moves.push(move);
-        }
-
-        let bestMove;
-        if (player === "O") {
-            let bestScore = -Infinity;
-            for (const move of moves) {
-                if (move.score > bestScore) {
-                    bestScore = move.score;
-                    bestMove = move;
-                }
-            }
-        } else {
-            let bestScore = Infinity;
-            for (const move of moves) {
-                if (move.score < bestScore) {
-                    bestScore = move.score;
-                    bestMove = move;
+                currentPlayer = currentPlayer === "X" ? "O" : "X";
+                if (gameMode === "PvC" && currentPlayer === "O") {
+                    setTimeout(handleComputerMove, 500);
                 }
             }
         }
 
-        return bestMove;
-    }
+        function handleComputerMove() {
+            let move;
+            if (Math.random() < 0.7) {
+                move = minimax(board, "O").index; // 70% chance to pick the best move
+            } else {
+                const emptyCells = board.map((cell, index) => cell === "" ? index : null).filter(index => index !== null);
+                move = emptyCells[Math.floor(Math.random() * emptyCells.length)]; // 30% chance to pick a random move
+            }
+            board[move] = "O";
+            renderBoard();
 
-    createBoard();
-      </script>
+            if (checkWin("O")) {
+                showWinMessage("O Wins the Game!");
+                disableBoard();
+            } else if (board.every((cell) => cell !== "")) {
+                showWinMessage("It's a Draw!");
+            } else {
+                currentPlayer = "X";
+            }
+        }
+
+        function checkWin(player) {
+            const winPatterns = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ];
+
+            return winPatterns.some((pattern) =>
+                pattern.every((index) => board[index] === player)
+            );
+        }
+
+        function showWinMessage(message) {
+            winMessage.textContent = message;
+            winMessage.style.display = "block";
+        }
+
+        function disableBoard() {
+            gameBoard.style.pointerEvents = "none";
+        }
+
+        function resetGame() {
+            board = ["", "", "", "", "", "", "", "", ""];
+            currentPlayer = "X";
+            winMessage.style.display = "none";
+            gameBoard.style.pointerEvents = "auto";
+            createBoard();
+        }
+
+        function goBack() {
+            resetGame();
+            gameModes.style.display = "flex";
+            gameBoard.style.display = "none";
+            gameControls.style.display = "none";
+        }
+
+        function renderBoard() {
+            gameBoard.querySelectorAll(".cell").forEach((cell, index) => {
+                cell.innerHTML = board[index] ? `<span class="${board[index]}">${board[index]}</span>` : "";
+            });
+        }
+
+        function minimax(newBoard, player) {
+            const emptyCells = newBoard
+                .map((cell, index) => (cell === "" ? index : null))
+                .filter((index) => index !== null);
+
+            if (checkWin("X")) return { score: -10 };
+            if (checkWin("O")) return { score: 10 };
+            if (emptyCells.length === 0) return { score: 0 };
+
+            const moves = [];
+
+            for (const index of emptyCells) {
+                const move = {};
+                move.index = index;
+                newBoard[index] = player;
+
+                if (player === "O") {
+                    const result = minimax(newBoard, "X");
+                    move.score = result.score;
+                } else {
+                    const result = minimax(newBoard, "O");
+                    move.score = result
+move.score = result.score;
+                }
+
+                newBoard[index] = "";
+                moves.push(move);
+            }
+
+            let bestMove;
+            if (player === "O") {
+                let bestScore = -Infinity;
+                for (const move of moves) {
+                    if (move.score > bestScore) {
+                        bestScore = move.score;
+                        bestMove = move;
+                    }
+                }
+            } else {
+                let bestScore = Infinity;
+                for (const move of moves) {
+                    if (move.score < bestScore) {
+                        bestScore = move.score;
+                        bestMove = move;
+                    }
+                }
+            }
+
+            return bestMove;
+        }
+
+        createBoard();
+    </script>
 </body>
 </html>
